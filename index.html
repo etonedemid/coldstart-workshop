@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cold Start Workshop</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <span class="logo">COLD START <span>Workshop</span></span>
+  <nav>
+    <a href="index.html" class="active">Browse</a>
+    <a href="submit.html">Submit</a>
+  </nav>
+  <span class="header-spacer"></span>
+  <a href="submit.html" class="btn-submit">+ Submit mod</a>
+</header>
+
+<section class="hero">
+  <h1>Cold Start Workshop</h1>
+  <p>Download and share maps, packs, characters and items for Cold Start.</p>
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search mods…" autocomplete="off">
+  </div>
+  <div class="filter-row" id="filters">
+    <button class="chip active" data-type="">All</button>
+    <button class="chip" data-type="map">Maps</button>
+    <button class="chip" data-type="pack">Packs</button>
+    <button class="chip" data-type="character">Characters</button>
+    <button class="chip" data-type="item">Items</button>
+  </div>
+</section>
+
+<main>
+  <div class="grid" id="grid">
+    <p class="empty">Loading…</p>
+  </div>
+</main>
+
+<!-- mod detail overlay -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <img class="modal-icon" id="m-icon" src="" alt="">
+      <div>
+        <div class="modal-title" id="m-name"></div>
+        <div class="modal-meta" id="m-meta"></div>
+      </div>
+      <button class="close-btn" onclick="closeOverlay()">×</button>
+    </div>
+    <div class="ss-row" id="m-ss"></div>
+    <p class="modal-desc" id="m-desc"></p>
+    <a class="dl-btn" id="m-dl" href="#" download>⬇ Download</a>
+    <div class="sig-block" id="m-sig" style="display:none"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+let allMods = [];
+let activeType = "";
+
+async function load() {
+  try {
+    allMods = await fetchMods();
+    render();
+  } catch(e) {
+    document.getElementById("grid").innerHTML =
+      `<p class="empty">Could not reach the workshop server.</p>`;
+  }
+}
+
+function render() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const mods = allMods.filter(m =>
+    (!activeType || m.type === activeType) &&
+    (!q || m.name.toLowerCase().includes(q) ||
+           (m.author||"").toLowerCase().includes(q) ||
+           (m.short_description||"").toLowerCase().includes(q))
+  );
+  const grid = document.getElementById("grid");
+  if (!mods.length) { grid.innerHTML = '<p class="empty">No mods found.</p>'; return; }
+  grid.innerHTML = mods.map(m => `
+    <div class="mod-card" onclick="openMod('${m.id}')">
+      ${m.icon
+        ? `<img class="mod-thumb" src="${m.icon}" alt="${m.name}" loading="lazy">`
+        : `<div class="mod-thumb"></div>`}
+      <div class="mod-body">
+        <div class="mod-top">
+          ${m.icon ? `<img class="mod-icon" src="${m.icon}" alt="">` : ""}
+          <div>
+            <div class="mod-name">${esc(m.name)}</div>
+            <div class="mod-author">${esc(m.author)}</div>
+          </div>
+          <span class="tag" style="margin-left:auto">${esc(m.type)}</span>
+        </div>
+        <div class="mod-desc">${esc(m.short_description)}</div>
+        <div class="mod-foot">
+          <span class="dl-count">${m.downloads}</span>
+          <span style="margin-left:auto;color:var(--dim)">${m.submitted_at}</span>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+async function openMod(id) {
+  try {
+    const m = await fetchMod(id);
+    document.getElementById("m-icon").src = m.icon || "";
+    document.getElementById("m-name").textContent = m.name;
+    document.getElementById("m-meta").textContent =
+      `by ${m.author}  ·  v${m.version}  ·  ${m.type}  ·  ${(m.size/1024).toFixed(0)} KB  ·  ${m.downloads} downloads`;
+    const ssRow = document.getElementById("m-ss");
+    ssRow.innerHTML = (m.screenshots||[]).map(s =>
+      `<img src="${s}" alt="screenshot" loading="lazy">`).join("");
+    document.getElementById("m-desc").textContent = m.description || "";
+    const dl = document.getElementById("m-dl");
+    dl.href = m.download_url;
+    dl.download = "";
+    const sig = document.getElementById("m-sig");
+    if (m.signature) {
+      sig.textContent = "Ed25519 signature: " + m.signature;
+      sig.style.display = "block";
+    } else { sig.style.display = "none"; }
+    document.getElementById("overlay").classList.add("open");
+  } catch(e) { alert("Failed to load mod details."); }
+}
+
+function closeOverlay() {
+  document.getElementById("overlay").classList.remove("open");
+}
+function closeModal(e) {
+  if (e.target === document.getElementById("overlay")) closeOverlay();
+}
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeOverlay(); });
+
+function esc(s) {
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("filters").addEventListener("click", e => {
+  if (!e.target.classList.contains("chip")) return;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+  e.target.classList.add("active");
+  activeType = e.target.dataset.type;
+  render();
+});
+
+load();
+</script>
+</body>
+</html>
