@@ -103,7 +103,7 @@ async function load() {
 function render() {
   const q = document.getElementById("search").value.toLowerCase();
   const filtered = allMods.filter(m =>
-    (!activeType || m.type === activeType) &&
+    (!activeType || (m.types||[m.type]).includes(activeType)) &&
     (!q || (m.name+m.author+m.short_description).toLowerCase().includes(q)));
 
   document.getElementById("status-count").textContent = filtered.length + " item" + (filtered.length !== 1 ? "s" : "");
@@ -116,7 +116,7 @@ function render() {
           : `<div class="mod-thumb32-placeholder">📁</div>`}
         <div class="mod-item-info">
           <div class="mod-item-name">${esc(m.name)}</div>
-          <div class="mod-item-sub">${esc(m.author)} · ${esc(m.type)}</div>
+          <div class="mod-item-sub">${esc(m.author)} · ${(m.types||[m.type]).join(', ')}</div>
         </div>
       </div>`).join("")
     : '<div class="mod-item"><span class="mod-item-name" style="color:#808080">No items found.</span></div>';

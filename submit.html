@@ -43,14 +43,14 @@
           <label for="f-ver">Version:</label>
           <input type="text" id="f-ver" name="version" maxlength="20" value="1.0">
         </div>
-        <div class="form-row">
-          <label for="f-type">Type: *</label>
-          <select id="f-type" name="mod_type">
-            <option value="map">Map (.csm)</option>
-            <option value="pack">Map pack (.cspack)</option>
-            <option value="character">Character</option>
-            <option value="item">Item</option>
-          </select>
+        <div class="form-row" style="align-items:flex-start">
+          <label style="padding-top:2px">Content types: *</label>
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <label style="width:auto;text-align:left;display:flex;align-items:center;gap:5px"><input type="checkbox" name="mod_type" value="map"> Maps (.csm)</label>
+            <label style="width:auto;text-align:left;display:flex;align-items:center;gap:5px"><input type="checkbox" name="mod_type" value="pack"> Map packs (.cspack)</label>
+            <label style="width:auto;text-align:left;display:flex;align-items:center;gap:5px"><input type="checkbox" name="mod_type" value="character"> Characters</label>
+            <label style="width:auto;text-align:left;display:flex;align-items:center;gap:5px"><input type="checkbox" name="mod_type" value="item"> Items</label>
+          </div>
         </div>
 
         <hr class="form-sep">
@@ -74,7 +74,7 @@
           <label>Mod file: *</label>
           <input type="file" name="mod_file" accept=".csm,.cspack,.zip" required>
         </div>
-        <div class="char-hint">.csm, .cspack, or .zip — max 128 MB</div>
+        <div class="char-hint">.csm, .cspack, or .zip — max 64 MB</div>
 
         <div class="form-row">
           <label>Icon: *</label>
