@@ -8,152 +8,177 @@
 </head>
 <body>
 
-<header>
-  <span class="logo">COLD START <span>Workshop</span></span>
-  <nav>
-    <a href="index.html">Browse</a>
-    <a href="submit.html" class="active">Submit</a>
-  </nav>
-  <span class="header-spacer"></span>
-  <a href="index.html" class="btn-submit">Browse mods</a>
-</header>
+<div class="page-wrap" style="align-items:center;justify-content:center;padding-bottom:36px">
+  <div class="win form-win">
+    <div class="titlebar">
+      <span class="titlebar-title">Submit Mod — Cold Start Workshop</span>
+      <button class="titlebar-btn" onclick="history.back()">✕</button>
+    </div>
 
-<div class="submit-wrap">
-  <h1>Submit a mod</h1>
-  <p>All submissions are reviewed before appearing in the workshop.</p>
+    <div class="menubar">
+      <a href="index.html" class="menubar-item">Browse</a>
+      <a href="submit.html" class="menubar-item active">Submit</a>
+    </div>
 
-  <div class="notice">
-    <strong>Guidelines</strong><br>
-    Only submit content you created or have permission to share.
-    No malicious code, stolen assets, or offensive content.
-    Submissions that don't meet these standards will be rejected.
+    <form id="form" enctype="multipart/form-data">
+      <div class="form-body">
+
+        <div class="notice98">
+          <span class="notice98-icon">ℹ</span>
+          <span>All submissions are reviewed before appearing in the workshop.
+          Only submit content you created or have permission to share.</span>
+        </div>
+
+        <hr class="form-sep">
+
+        <div class="form-row">
+          <label for="f-name">Mod name: *</label>
+          <input type="text" id="f-name" name="name" maxlength="80" required placeholder="My Awesome Map">
+        </div>
+        <div class="form-row">
+          <label for="f-author">Author: *</label>
+          <input type="text" id="f-author" name="author" maxlength="64" required placeholder="Your name or handle">
+        </div>
+        <div class="form-row">
+          <label for="f-ver">Version:</label>
+          <input type="text" id="f-ver" name="version" maxlength="20" value="1.0">
+        </div>
+        <div class="form-row">
+          <label for="f-type">Type: *</label>
+          <select id="f-type" name="mod_type">
+            <option value="map">Map (.csm)</option>
+            <option value="pack">Map pack (.cspack)</option>
+            <option value="character">Character</option>
+            <option value="item">Item</option>
+          </select>
+        </div>
+
+        <hr class="form-sep">
+
+        <div class="form-row">
+          <label for="f-short">Short description: *</label>
+          <input type="text" id="f-short" name="short_description" maxlength="200" required
+                 placeholder="One line shown on the browse page" oninput="updateCount()">
+        </div>
+        <div class="char-hint"><span id="char-count">0</span>/200 characters</div>
+
+        <div class="form-row">
+          <label for="f-desc">Full description: *</label>
+          <textarea id="f-desc" name="description" required
+                    placeholder="Detailed description, credits, how to play…"></textarea>
+        </div>
+
+        <hr class="form-sep">
+
+        <div class="form-row">
+          <label>Mod file: *</label>
+          <input type="file" name="mod_file" accept=".csm,.cspack,.zip" required>
+        </div>
+        <div class="char-hint">.csm, .cspack, or .zip — max 128 MB</div>
+
+        <div class="form-row">
+          <label>Icon: *</label>
+          <input type="file" name="icon" accept="image/png,image/jpeg,image/webp" required id="icon-input"
+                 onchange="previewIcon(this)">
+        </div>
+        <div class="char-hint">PNG/JPG/WebP, max 8 MB — ideally square</div>
+        <div id="icon-prev" style="margin-left:138px;display:none">
+          <img id="icon-img" style="width:48px;height:48px;object-fit:cover;border:2px inset #c0c0c0">
+        </div>
+
+        <div class="form-row">
+          <label>Screenshots: *</label>
+          <input type="file" name="screenshots" accept="image/png,image/jpeg,image/webp"
+                 multiple required id="ss-input" onchange="previewSS(this)">
+        </div>
+        <div class="char-hint">At least 1, up to 5 — PNG/JPG/WebP, max 8 MB each</div>
+        <div id="ss-prev" style="margin-left:138px;display:flex;gap:4px;flex-wrap:wrap;margin-top:4px"></div>
+
+      </div>
+
+      <div id="msg" class="msg-box"></div>
+
+      <div class="form-footer">
+        <button type="submit" class="btn98 default" id="submit-btn">Submit</button>
+        <a href="index.html" class="btn98">Cancel</a>
+      </div>
+    </form>
   </div>
+</div>
 
-  <form id="form" enctype="multipart/form-data">
-
-    <div class="form-group">
-      <label>Mod name <span class="req">*</span></label>
-      <input type="text" name="name" maxlength="80" required placeholder="My Awesome Map">
-    </div>
-
-    <div class="form-group">
-      <label>Author name <span class="req">*</span></label>
-      <input type="text" name="author" maxlength="64" required placeholder="Your name or handle">
-    </div>
-
-    <div class="form-group">
-      <label>Version</label>
-      <input type="text" name="version" maxlength="20" value="1.0" placeholder="1.0">
-    </div>
-
-    <div class="form-group">
-      <label>Type <span class="req">*</span></label>
-      <select name="mod_type">
-        <option value="map">Map (.csm)</option>
-        <option value="pack">Map pack (.cspack)</option>
-        <option value="character">Character</option>
-        <option value="item">Item</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>Short description <span class="req">*</span> <span class="req">(max 200 chars)</span></label>
-      <input type="text" name="short_description" id="short_desc" maxlength="200" required
-             placeholder="One-liner shown on the browse page">
-      <div class="char-count"><span id="short_count">0</span>/200</div>
-    </div>
-
-    <div class="form-group">
-      <label>Full description <span class="req">*</span></label>
-      <textarea name="description" rows="6" required
-                placeholder="Detailed description: what's in the mod, how to play it, credits, etc."></textarea>
-    </div>
-
-    <div class="form-group">
-      <label>Mod file <span class="req">*</span></label>
-      <input type="file" name="mod_file" accept=".csm,.cspack,.zip" required>
-      <p class="file-hint">Supported: .csm, .cspack, .zip — max 128 MB</p>
-    </div>
-
-    <div class="form-group">
-      <label>Icon <span class="req">*</span></label>
-      <input type="file" name="icon" accept="image/png,image/jpeg,image/webp" required>
-      <p class="file-hint">PNG, JPG, or WebP — max 8 MB — ideally square (512×512)</p>
-    </div>
-
-    <div class="form-group">
-      <label>Screenshots <span class="req">*</span> (at least 1, up to 5)</label>
-      <input type="file" name="screenshots" accept="image/png,image/jpeg,image/webp"
-             multiple required id="ss_input">
-      <p class="file-hint">PNG, JPG, or WebP — max 8 MB each</p>
-      <div id="ss_preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
-    </div>
-
-    <button class="submit-btn" type="submit" id="submit_btn">Submit for review</button>
-    <div class="status-msg" id="status"></div>
-  </form>
+<!-- taskbar -->
+<div class="taskbar">
+  <button class="start-btn">🏁 Start</button>
+  <div class="taskbar-sep"></div>
+  <button class="taskbar-task" onclick="location.href='index.html'">Cold Start Workshop</button>
+  <button class="taskbar-task active">Submit Mod</button>
+  <div class="taskbar-spacer"></div>
+  <div class="clock-tray" id="clock"></div>
 </div>
 
 <script src="js/api.js"></script>
 <script>
-// Character counter
-const shortInput = document.getElementById("short_desc");
-const shortCount = document.getElementById("short_count");
-shortInput.addEventListener("input", () => {
-  shortCount.textContent = shortInput.value.length;
-});
+function updateCount() {
+  document.getElementById("char-count").textContent =
+    document.getElementById("f-short").value.length;
+}
 
-// Screenshot preview
-document.getElementById("ss_input").addEventListener("change", function() {
-  const prev = document.getElementById("ss_preview");
+function previewIcon(input) {
+  if (!input.files.length) return;
+  const div = document.getElementById("icon-prev");
+  const img = document.getElementById("icon-img");
+  img.src = URL.createObjectURL(input.files[0]);
+  div.style.display = "block";
+}
+
+function previewSS(input) {
+  const prev = document.getElementById("ss-prev");
   prev.innerHTML = "";
-  const files = [...this.files].slice(0, 5);
-  if (files.length > 5) {
-    showStatus("Maximum 5 screenshots — only the first 5 will be used.", "err");
-  }
-  files.forEach(f => {
+  [...input.files].slice(0, 5).forEach(f => {
     const img = document.createElement("img");
-    img.style.cssText = "height:90px;width:auto;border-radius:6px;object-fit:cover;border:1px solid var(--border)";
+    img.style.cssText = "height:48px;width:auto;object-fit:cover;border:2px inset #c0c0c0";
     img.src = URL.createObjectURL(f);
     prev.appendChild(img);
   });
-});
+}
 
-// Submit
 document.getElementById("form").addEventListener("submit", async e => {
   e.preventDefault();
-  const btn = document.getElementById("submit_btn");
-  btn.disabled = true;
-  btn.textContent = "Uploading…";
-  showStatus("", "");
+  const btn = document.getElementById("submit-btn");
+  const msg = document.getElementById("msg");
+  btn.disabled = true; btn.textContent = "Submitting…";
+  msg.className = "msg-box"; msg.style.display = "none";
 
   try {
     const fd = new FormData(e.target);
-
-    // Cap screenshots at 5 (browsers may pass more via multiple)
-    const ssInput = document.getElementById("ss_input");
+    const ssInput = document.getElementById("ss-input");
     fd.delete("screenshots");
     [...ssInput.files].slice(0, 5).forEach(f => fd.append("screenshots", f));
 
     const result = await submitMod(fd);
-    showStatus(`✓ Submitted! Your mod ID is <strong>${result.id}</strong>. It will appear after review.`, "ok");
+    msg.className = "msg-box ok";
+    msg.textContent = "✓ Submitted! Your mod ID: " + result.id + ". It will appear after review.";
+    msg.style.display = "block";
     e.target.reset();
-    document.getElementById("ss_preview").innerHTML = "";
-    shortCount.textContent = "0";
+    document.getElementById("ss-prev").innerHTML = "";
+    document.getElementById("icon-prev").style.display = "none";
+    document.getElementById("char-count").textContent = "0";
   } catch(err) {
-    showStatus("✗ " + err.message, "err");
+    msg.className = "msg-box err";
+    msg.textContent = "✗ " + err.message;
+    msg.style.display = "block";
   } finally {
     btn.disabled = false;
-    btn.textContent = "Submit for review";
+    btn.textContent = "Submit";
   }
 });
 
-function showStatus(msg, type) {
-  const el = document.getElementById("status");
-  el.innerHTML = msg;
-  el.className = "status-msg " + type;
-  el.style.display = msg ? "block" : "none";
+function tick() {
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
 }
+tick(); setInterval(tick, 10000);
 </script>
 </body>
 </html>

@@ -8,147 +8,161 @@
 </head>
 <body>
 
-<header>
-  <span class="logo">COLD START <span>Workshop</span></span>
-  <nav>
-    <a href="index.html" class="active">Browse</a>
-    <a href="submit.html">Submit</a>
-  </nav>
-  <span class="header-spacer"></span>
-  <a href="submit.html" class="btn-submit">+ Submit mod</a>
-</header>
-
-<section class="hero">
-  <h1>Cold Start Workshop</h1>
-  <p>Download and share maps, packs, characters and items for Cold Start.</p>
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Search mods…" autocomplete="off">
-  </div>
-  <div class="filter-row" id="filters">
-    <button class="chip active" data-type="">All</button>
-    <button class="chip" data-type="map">Maps</button>
-    <button class="chip" data-type="pack">Packs</button>
-    <button class="chip" data-type="character">Characters</button>
-    <button class="chip" data-type="item">Items</button>
-  </div>
-</section>
-
-<main>
-  <div class="grid" id="grid">
-    <p class="empty">Loading…</p>
-  </div>
-</main>
-
-<!-- mod detail overlay -->
-<div class="overlay" id="overlay" onclick="closeModal(event)">
-  <div class="modal" id="modal">
-    <div class="modal-header">
-      <img class="modal-icon" id="m-icon" src="" alt="">
-      <div>
-        <div class="modal-title" id="m-name"></div>
-        <div class="modal-meta" id="m-meta"></div>
-      </div>
-      <button class="close-btn" onclick="closeOverlay()">×</button>
+<div class="page-wrap">
+  <!-- browser window -->
+  <div class="win browser-win">
+    <div class="titlebar">
+      <span class="titlebar-title">Cold Start Workshop</span>
+      <button class="titlebar-btn" title="Minimize">_</button>
+      <button class="titlebar-btn" title="Maximize">□</button>
+      <button class="titlebar-btn" onclick="window.close()" title="Close">✕</button>
     </div>
-    <div class="ss-row" id="m-ss"></div>
-    <p class="modal-desc" id="m-desc"></p>
-    <a class="dl-btn" id="m-dl" href="#" download>⬇ Download</a>
-    <div class="sig-block" id="m-sig" style="display:none"></div>
+
+    <div class="menubar">
+      <a href="index.html" class="menubar-item active">Browse</a>
+      <a href="submit.html" class="menubar-item">Submit</a>
+    </div>
+
+    <div class="toolbar">
+      <button class="toolbar-btn" id="btn-all"       onclick="setType('')"          >📁 All</button>
+      <button class="toolbar-btn" id="btn-map"       onclick="setType('map')"       >🗺 Maps</button>
+      <button class="toolbar-btn" id="btn-pack"      onclick="setType('pack')"      >📦 Packs</button>
+      <button class="toolbar-btn" id="btn-character" onclick="setType('character')" >🧑 Characters</button>
+      <button class="toolbar-btn" id="btn-item"      onclick="setType('item')"      >⚙ Items</button>
+      <div class="toolbar-sep"></div>
+      <a href="submit.html" class="toolbar-btn">+ Submit mod</a>
+    </div>
+
+    <div class="addressbar">
+      <span>Search:</span>
+      <input type="text" id="search" placeholder="Type to filter…" oninput="render()">
+    </div>
+
+    <div class="win-content inset" id="grid">
+      <div class="mod-grid" id="mod-grid">
+        <div class="mod-item"><span class="mod-item-name">Loading…</span></div>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="statusbar-cell" id="status-count">0 items</div>
+      <div class="statusbar-cell" id="status-sel"></div>
+    </div>
   </div>
+</div>
+
+<!-- mod detail dialog -->
+<div class="detail-panel" id="detail" onclick="maybeClose(event)">
+  <div class="win detail-win" id="detail-win">
+    <div class="titlebar">
+      <span class="titlebar-title" id="d-title">Mod details</span>
+      <button class="titlebar-btn" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body">
+      <div class="ss-scroll" id="d-ss"></div>
+      <table style="font-size:11px;border-collapse:collapse;width:100%">
+        <tr><td style="width:90px;padding:2px 4px;color:#444">Name</td><td id="d-name" style="padding:2px 4px;font-weight:bold"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Author</td><td id="d-author" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Version</td><td id="d-ver" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Type</td><td id="d-type" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Size</td><td id="d-size" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Downloads</td><td id="d-dl" style="padding:2px 4px"></td></tr>
+      </table>
+      <div class="desc-box" id="d-desc"></div>
+    </div>
+    <div class="detail-footer">
+      <a class="btn98 default" id="d-dl-btn" href="#" download>⬇ Download</a>
+      <button class="btn98" onclick="closeDetail()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- taskbar -->
+<div class="taskbar">
+  <button class="start-btn">🏁 Start</button>
+  <div class="taskbar-sep"></div>
+  <button class="taskbar-task active">Cold Start Workshop</button>
+  <div class="taskbar-spacer"></div>
+  <div class="clock-tray" id="clock"></div>
 </div>
 
 <script src="js/api.js"></script>
 <script>
-let allMods = [];
-let activeType = "";
+let allMods = [], activeType = "", selected = null;
 
 async function load() {
+  const grid = document.getElementById("mod-grid");
   try {
     allMods = await fetchMods();
     render();
   } catch(e) {
-    document.getElementById("grid").innerHTML =
-      `<p class="empty">Could not reach the workshop server.</p>`;
+    grid.innerHTML = '<div class="mod-item" style="color:#800000">⚠ Could not connect to workshop server.</div>';
   }
 }
 
 function render() {
   const q = document.getElementById("search").value.toLowerCase();
-  const mods = allMods.filter(m =>
+  const filtered = allMods.filter(m =>
     (!activeType || m.type === activeType) &&
-    (!q || m.name.toLowerCase().includes(q) ||
-           (m.author||"").toLowerCase().includes(q) ||
-           (m.short_description||"").toLowerCase().includes(q))
-  );
-  const grid = document.getElementById("grid");
-  if (!mods.length) { grid.innerHTML = '<p class="empty">No mods found.</p>'; return; }
-  grid.innerHTML = mods.map(m => `
-    <div class="mod-card" onclick="openMod('${m.id}')">
-      ${m.icon
-        ? `<img class="mod-thumb" src="${m.icon}" alt="${m.name}" loading="lazy">`
-        : `<div class="mod-thumb"></div>`}
-      <div class="mod-body">
-        <div class="mod-top">
-          ${m.icon ? `<img class="mod-icon" src="${m.icon}" alt="">` : ""}
-          <div>
-            <div class="mod-name">${esc(m.name)}</div>
-            <div class="mod-author">${esc(m.author)}</div>
-          </div>
-          <span class="tag" style="margin-left:auto">${esc(m.type)}</span>
+    (!q || (m.name+m.author+m.short_description).toLowerCase().includes(q)));
+
+  document.getElementById("status-count").textContent = filtered.length + " item" + (filtered.length !== 1 ? "s" : "");
+
+  document.getElementById("mod-grid").innerHTML = filtered.length
+    ? filtered.map(m => `
+      <div class="mod-item" onclick="openMod('${m.id}')" title="${esc(m.name)} by ${esc(m.author)}">
+        ${m.icon
+          ? `<img class="mod-thumb32" src="${m.icon}" alt="">`
+          : `<div class="mod-thumb32-placeholder">📁</div>`}
+        <div class="mod-item-info">
+          <div class="mod-item-name">${esc(m.name)}</div>
+          <div class="mod-item-sub">${esc(m.author)} · ${esc(m.type)}</div>
         </div>
-        <div class="mod-desc">${esc(m.short_description)}</div>
-        <div class="mod-foot">
-          <span class="dl-count">${m.downloads}</span>
-          <span style="margin-left:auto;color:var(--dim)">${m.submitted_at}</span>
-        </div>
-      </div>
-    </div>`).join("");
+      </div>`).join("")
+    : '<div class="mod-item"><span class="mod-item-name" style="color:#808080">No items found.</span></div>';
+}
+
+function setType(t) {
+  activeType = t;
+  document.querySelectorAll(".toolbar-btn[id^=btn-]").forEach(b => b.classList.remove("active"));
+  const btn = document.getElementById("btn-" + (t || "all"));
+  if (btn) btn.classList.add("active");
+  render();
 }
 
 async function openMod(id) {
   try {
     const m = await fetchMod(id);
-    document.getElementById("m-icon").src = m.icon || "";
-    document.getElementById("m-name").textContent = m.name;
-    document.getElementById("m-meta").textContent =
-      `by ${m.author}  ·  v${m.version}  ·  ${m.type}  ·  ${(m.size/1024).toFixed(0)} KB  ·  ${m.downloads} downloads`;
-    const ssRow = document.getElementById("m-ss");
-    ssRow.innerHTML = (m.screenshots||[]).map(s =>
-      `<img src="${s}" alt="screenshot" loading="lazy">`).join("");
-    document.getElementById("m-desc").textContent = m.description || "";
-    const dl = document.getElementById("m-dl");
-    dl.href = m.download_url;
-    dl.download = "";
-    const sig = document.getElementById("m-sig");
-    if (m.signature) {
-      sig.textContent = "Ed25519 signature: " + m.signature;
-      sig.style.display = "block";
-    } else { sig.style.display = "none"; }
-    document.getElementById("overlay").classList.add("open");
-  } catch(e) { alert("Failed to load mod details."); }
+    document.getElementById("d-title").textContent = m.name;
+    document.getElementById("d-name").textContent   = m.name;
+    document.getElementById("d-author").textContent = m.author;
+    document.getElementById("d-ver").textContent    = "v" + m.version;
+    document.getElementById("d-type").textContent   = m.type;
+    document.getElementById("d-size").textContent   = (m.size / 1024).toFixed(0) + " KB";
+    document.getElementById("d-dl").textContent     = m.downloads + " downloads";
+    document.getElementById("d-desc").textContent   = m.description || m.short_description || "";
+    document.getElementById("d-dl-btn").href        = m.download_url;
+    document.getElementById("d-ss").innerHTML = (m.screenshots||[])
+      .map(s => `<img src="${s}" alt="screenshot">`).join("");
+    document.getElementById("detail").classList.add("open");
+  } catch(e) { alert("Could not load mod details."); }
 }
 
-function closeOverlay() {
-  document.getElementById("overlay").classList.remove("open");
-}
-function closeModal(e) {
-  if (e.target === document.getElementById("overlay")) closeOverlay();
-}
-document.addEventListener("keydown", e => { if(e.key==="Escape") closeOverlay(); });
+function closeDetail() { document.getElementById("detail").classList.remove("open"); }
+function maybeClose(e) { if (e.target === document.getElementById("detail")) closeDetail(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(); });
 
-function esc(s) {
-  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// clock
+function tick() {
+  const d = new Date();
+  document.getElementById("clock").textContent =
+    d.getHours().toString().padStart(2,"0") + ":" + d.getMinutes().toString().padStart(2,"0");
 }
+tick(); setInterval(tick, 10000);
 
-document.getElementById("search").addEventListener("input", render);
-document.getElementById("filters").addEventListener("click", e => {
-  if (!e.target.classList.contains("chip")) return;
-  document.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-  e.target.classList.add("active");
-  activeType = e.target.dataset.type;
-  render();
-});
-
+setType("");
 load();
 </script>
 </body>
