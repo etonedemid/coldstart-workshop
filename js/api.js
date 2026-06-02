@@ -1,4 +1,6 @@
-const API = "https://coldstartworkshop.duckdns.org/api/v1";
+const API = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+  ? "http://localhost:8080/api/v1"
+  : "https://coldstartworkshop.duckdns.org/api/v1";
 
 async function fetchMods(type = "") {
   const url = type ? `${API}/mods?type=${type}` : `${API}/mods`;
