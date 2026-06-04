@@ -1,4 +1,4 @@
-# Cold Start Workshop — public site
+# Cold Start Workshop - public site
 
 Static GitHub Pages site for the Cold Start mod workshop.
 Hosted at: https://etonedemid.github.io/coldstart-workshop/
