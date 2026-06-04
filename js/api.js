@@ -6,9 +6,11 @@ const API = (location.hostname === "localhost" || location.hostname === "127.0.0
   ? "http://localhost:8080/api/v1"
   : "https://coldstartworkshop.duckdns.org/api/v1";
 
-async function fetchMods(type = "") {
-  const url = type ? `${API}/mods?type=${type}` : `${API}/mods`;
-  const r = await fetch(url);
+async function fetchMods(type = "", sort = "newest") {
+  const params = new URLSearchParams();
+  if (type) params.set("type", type);
+  if (sort) params.set("sort", sort);
+  const r = await fetch(`${API}/mods?${params}`);
   if (!r.ok) throw new Error("Failed to fetch mods");
   return r.json();
 }
@@ -16,6 +18,12 @@ async function fetchMods(type = "") {
 async function fetchMod(id) {
   const r = await fetch(`${API}/mods/${id}`);
   if (!r.ok) throw new Error("Not found");
+  return r.json();
+}
+
+async function voteOnMod(id, upvote) {
+  const r = await fetch(`${API}/mods/${id}/vote?upvote=${upvote}`, { method: "POST" });
+  if (!r.ok) throw new Error("Vote failed");
   return r.json();
 }
 

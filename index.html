@@ -30,6 +30,13 @@
       <button class="toolbar-btn" id="btn-character" onclick="setType('character')" >🧑 Characters</button>
       <button class="toolbar-btn" id="btn-item"      onclick="setType('item')"      >⚙ Items</button>
       <div class="toolbar-sep"></div>
+      <select class="toolbar-btn" id="sort-select" onchange="resort()" style="cursor:pointer">
+        <option value="newest">🕐 Newest</option>
+        <option value="name">🔤 Name</option>
+        <option value="score">⭐ Score</option>
+        <option value="downloads">⬇ Downloads</option>
+      </select>
+      <div class="toolbar-sep"></div>
       <a href="submit.html" class="toolbar-btn">+ Submit mod</a>
     </div>
 
@@ -40,12 +47,12 @@
 
     <div class="win-content inset" id="grid">
       <div class="mod-grid" id="mod-grid">
-        <div class="mod-item"><span class="mod-item-name">Loading…</span></div>
+        <div class="mod-item"><span class="mod-item-name">Fetching…</span></div>
       </div>
     </div>
 
     <div class="statusbar">
-      <div class="statusbar-cell" id="status-count">0 items</div>
+      <div class="statusbar-cell" id="status-count">Fetching…</div>
       <div class="statusbar-cell" id="status-sel"></div>
     </div>
   </div>
@@ -65,13 +72,17 @@
         <tr><td style="padding:2px 4px;color:#444">Author</td><td id="d-author" style="padding:2px 4px"></td></tr>
         <tr><td style="padding:2px 4px;color:#444">Version</td><td id="d-ver" style="padding:2px 4px"></td></tr>
         <tr><td style="padding:2px 4px;color:#444">Type</td><td id="d-type" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Folder ID</td><td id="d-folder" style="padding:2px 4px;font-family:monospace"></td></tr>
         <tr><td style="padding:2px 4px;color:#444">Size</td><td id="d-size" style="padding:2px 4px"></td></tr>
         <tr><td style="padding:2px 4px;color:#444">Downloads</td><td id="d-dl" style="padding:2px 4px"></td></tr>
+        <tr><td style="padding:2px 4px;color:#444">Score</td><td id="d-score" style="padding:2px 4px"></td></tr>
       </table>
       <div class="desc-box" id="d-desc"></div>
     </div>
     <div class="detail-footer">
       <a class="btn98 default" id="d-dl-btn" href="#" download>⬇ Download</a>
+      <button class="btn98" id="d-up-btn" onclick="vote(true)">▲ <span id="d-up-count">0</span></button>
+      <button class="btn98" id="d-dn-btn" onclick="vote(false)">▼ <span id="d-dn-count">0</span></button>
       <button class="btn98" onclick="closeDetail()">Close</button>
     </div>
   </div>
@@ -88,17 +99,23 @@
 
 <script src="js/api.js"></script>
 <script>
-let allMods = [], activeType = "", selected = null;
+let allMods = [], activeType = "", selected = null, currentModId = null, votedIds = new Set();
 
 async function load() {
   const grid = document.getElementById("mod-grid");
+  const sort = document.getElementById("sort-select").value;
+  grid.innerHTML = '<div class="mod-item"><span class="mod-item-name" style="color:#444">Fetching…</span></div>';
+  document.getElementById("status-count").textContent = "Fetching…";
   try {
-    allMods = await fetchMods();
+    allMods = await fetchMods("", sort);
     render();
   } catch(e) {
     grid.innerHTML = '<div class="mod-item" style="color:#800000">⚠ Could not connect to workshop server.</div>';
+    document.getElementById("status-count").textContent = "Error";
   }
 }
+
+function resort() { load(); }
 
 function render() {
   const q = document.getElementById("search").value.toLowerCase();
@@ -116,7 +133,7 @@ function render() {
           : `<div class="mod-thumb32-placeholder">📁</div>`}
         <div class="mod-item-info">
           <div class="mod-item-name">${esc(m.name)}</div>
-          <div class="mod-item-sub">${esc(m.author)} · ${(m.types||[m.type]).join(', ')}</div>
+          <div class="mod-item-sub">${esc(m.author)} · ${(m.types||[m.type]).join(', ')} · ▲${m.upvotes||0} ▼${m.downvotes||0}</div>
         </div>
       </div>`).join("")
     : '<div class="mod-item"><span class="mod-item-name" style="color:#808080">No items found.</span></div>';
@@ -131,21 +148,46 @@ function setType(t) {
 }
 
 async function openMod(id) {
+  currentModId = id;
   try {
     const m = await fetchMod(id);
-    document.getElementById("d-title").textContent = m.name;
+    document.getElementById("d-title").textContent  = m.name;
     document.getElementById("d-name").textContent   = m.name;
     document.getElementById("d-author").textContent = m.author;
     document.getElementById("d-ver").textContent    = "v" + m.version;
     document.getElementById("d-type").textContent   = m.type;
+    document.getElementById("d-folder").textContent = m.folder_id || m.id;
     document.getElementById("d-size").textContent   = (m.size / 1024).toFixed(0) + " KB";
     document.getElementById("d-dl").textContent     = m.downloads + " downloads";
+    document.getElementById("d-score").textContent  = `▲ ${m.upvotes||0}  ▼ ${m.downvotes||0}  score: ${m.score||0}`;
+    document.getElementById("d-up-count").textContent = m.upvotes || 0;
+    document.getElementById("d-dn-count").textContent = m.downvotes || 0;
     document.getElementById("d-desc").textContent   = m.description || m.short_description || "";
     document.getElementById("d-dl-btn").href        = m.download_url;
     document.getElementById("d-ss").innerHTML = (m.screenshots||[])
       .map(s => `<img src="${s}" alt="screenshot">`).join("");
+    // Disable vote buttons if already voted
+    const voted = votedIds.has(id);
+    document.getElementById("d-up-btn").disabled = voted;
+    document.getElementById("d-dn-btn").disabled = voted;
     document.getElementById("detail").classList.add("open");
   } catch(e) { alert("Could not load mod details."); }
+}
+
+async function vote(upvote) {
+  if (!currentModId || votedIds.has(currentModId)) return;
+  try {
+    const r = await voteOnMod(currentModId, upvote);
+    votedIds.add(currentModId);
+    document.getElementById("d-up-count").textContent = r.upvotes;
+    document.getElementById("d-dn-count").textContent = r.downvotes;
+    document.getElementById("d-score").textContent = `▲ ${r.upvotes}  ▼ ${r.downvotes}  score: ${r.score}`;
+    document.getElementById("d-up-btn").disabled = true;
+    document.getElementById("d-dn-btn").disabled = true;
+    // Update local list
+    const m = allMods.find(x => x.id === currentModId);
+    if (m) { m.upvotes = r.upvotes; m.downvotes = r.downvotes; m.score = r.score; render(); }
+  } catch(e) { alert("Could not submit vote."); }
 }
 
 function closeDetail() { document.getElementById("detail").classList.remove("open"); }
